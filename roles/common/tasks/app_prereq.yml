@@ -1,0 +1,75 @@
+# APP_PREREQ_function
+
+# 1.----------------------------------------------------------------------------------
+  PRINT_HEAD "Add application User"
+  id roboshop &>> /tmp/roboshop.log
+  if [ $? -ne 0 ]
+  then
+  useradd roboshop &>> /tmp/roboshop.log
+  fi
+  STATUS_CHECK
+
+- name: Add application User
+  ansible.builtin.user:
+    name: roboshop
+
+# 2.--------------------------------------------------------------------------------------
+    PRINT_HEAD "setup an app directory."
+    mkdir -p /app &>> /tmp/roboshop.log
+    STATUS_CHECK
+    
+    PRINT_HEAD "remove all the content inside the /app_directory"
+    rm -rf /app/* &>> /tmp/roboshop.log
+    STATUS_CHECK
+
+- name: remove all the content inside the /app_directory
+  ansible.builtin.file:
+    path: /app
+    state: absent
+
+- name: setup an app directory.
+  ansible.builtin.file:
+    path: /app
+    state: directory
+
+# 3.-------------------------------------------------------------------------------------------
+    PRINT_HEAD "Download the application code"
+    curl -o /tmp/{component}.zip https://roboshop-artifacts.s3.amazonaws.com/{component}.zip &>> /tmp/roboshop.log
+    cd /app &>> /tmp/roboshop.log
+    unzip /tmp/{component}.zip &>> /tmp/roboshop.log
+    STATUS_CHECK
+
+- name: Unarchive a file that needs to be downloaded >> Download the application code
+  ansible.builtin.unarchive:
+    src: https://roboshop-artifacts.s3.amazonaws.com/{component}.zip
+    dest: /app
+    remote_src: yes
+
+# 4.--------------------------------------------------------------------------------------------
+    if [{component_type} == nodejs]
+    then
+    PRINT_HEAD "Download Dependencies-nodejs"
+    cd /app &>> /tmp/roboshop.log
+    npm install &>> /tmp/roboshop.log
+    STATUS_CHECK
+    
+    else
+    PRINT_HEAD "Download Dependencies-maven"
+    cd /app
+    mvn clean package
+    mv target/shipping-1.0.jar shipping.jar
+    STATUS_CHECK
+    fi
+
+- name: Download Dependencies-nodejs
+  ansible.builtin.shell: npm install
+    args:
+      chdir: /app
+  when: {{component_type}} == "nodejs"
+
+# combining two commands in shell & installing package in target directory
+- name: Download Dependencies-maven & move mv shipping.jar
+  ansible.builtin.shell: mvn clean package ; mv target/shipping-1.0.jar shipping.jar
+    args:
+      chdir: /app
+  when: {{component_type}} != "nodejs"

@@ -1,0 +1,85 @@
+# Ansible by default will not start if the value of >> "roboshop_mysql_password" is not declared.
+# we will declare the value of "roboshop_mysql_password" in "cli"
+$ ansible-playbook -i cart-dev.nellore.online, roboshop.yml
+-e ROLE_NAME=rabbitmq -e ansible_user=centos -e ansible_password=DevOps321
+-e HOSTS=all
+-e root_mysql_password=RoboShop@1
+  
+# In shell below steps are followed-----------------------------------
+# to check if the variable "roboshop_mysql_password" is empty or not
+# if variable is empty then -z = true >> enter roboshop_mysql_password
+if [ -z "roboshop_{component}_password"]
+then
+echo -e "\e[31m enter roboshop_{component}_password \e[0m"
+fi
+  
+#----------------------------------------------------------------------------------------------------  
+# component=mysql >> in vars.yml >> component: mysql
+  
+# source common.sh >> source is not required in ansible, only CONSIDER shell_functions
+
+component=mysql
+source common.sh
+
+# 1.-------------------------------------------------------------------------------------------------
+PRINT_HEAD "disable MySQL 8 version"
+dnf module disable {component} -y   &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: Configure YUM Repos from the script provided by vendor.
+  Ansible.builtin.shell: dnf module disable {component} -y
+
+# 2.----------------------------------------------------------------------------------------------
+PRINT_HEAD "copy mysql.repo"
+cp ${path}/files/{component}.repo /etc/yum.repos.d/{component}.repo  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: copy mysql.repo
+  ansible.builtin.template:
+    src: {component}.repo
+    dest: /etc/yum.repos.d/{component}.repo
+
+
+# 3.-----------------------------------------------------------------------------------------------
+PRINT_HEAD "install mysql"
+yum install {component}-community-server -y  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: install mysql
+  ansible.builtin.yum:
+    name: "{{component}}-community-server"
+    state: installed
+
+# 4.--------------------------------------------------------------------------------------------------
+PRINT_HEAD "enable mysql"
+systemctl enable mysqld  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: start mysql (including enable & restart)
+  ansible.builtin.systemd:
+    name: mysqld
+    state: restarted
+    enabled: true
+
+PRINT_HEAD "start mysql"
+systemctl start mysqld   &>> /tmp/roboshop.log
+STATUS_CHECK
+
+# 5.-------------------------------------------------------------------------------------------------
+PRINT_HEAD "changing the default password"
+mysql_secure_installation --set-root-pass {roboshop_{component}_password}
+STATUS_CHECK
+
+- name: change the default root password
+  Ansible.builtin.shell: mysql_secure_installation --set-root-pass {{root_mysql_password}}
+  ignore_errors: yes
+
+# Note >> when u rerun mysql playbook,
+# it will throw an error with return code > rc: 1 >>
+# when password is already reset/changed  >> this is a expected behaviour,
+# we have to proceed to continue with the playbook by handling the error using >> ignore_errors: yes
+
+# Run MYSQL component >> ensure to pass password variable for >> root_mysql_password
+
+# $ ansible-playbook -i cart-dev.nellore.online, roboshop.yml -e ROLE_NAME=cart -e ansible_user=centos
+# -e ansible_password=DevOps321 -e root_mysql_password=RoboShop@1

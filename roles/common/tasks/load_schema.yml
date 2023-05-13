@@ -1,0 +1,58 @@
+# load_schema_function
+
+# 1. ---------------------------------------------------------------------------------------------------------------
+  if [${load_schema} == true]
+  then
+  if [${schema_type} == mongo]
+  PRINT_HEAD "install mongodb-client"
+  yum install mongodb-org-shell -y &>> /tmp/roboshop.log
+  STATUS_CHECK
+  
+  PRINT_HEAD "load schema"
+  mongo --host MONGODB-SERVER-IPADDRESS </app/schema/{component}.js  &>> /tmp/roboshop.log
+  STATUS_CHECK
+
+  - name: Load MongoDB Schema
+    when: ( {{schema_type}} == "mongo" ) and ( {{load_schema}} == "true" )
+    block:
+      - name: Setup the MongoDB repo file
+        ansible.builtin.template:
+          src: mongo.repo
+          dest: /etc/yum.repos.d/mongo.repo
+
+      - name: install mongodb-client
+        ansible.builtin.yum:
+          name: mongodb-org-shell
+          state: installed
+
+      - name: Load Schema
+        ansible.builtin.shell: mongo --host "{{ lookup('aws_ssm', 'dev.catalogue.mongo_endpoint', region='us-east-1' ) }}" </app/schema/{{component}}.js
+
+# 2. ---------------------------------------------------------------------------------------------------------------
+    PRINT_HEAD "install mysql-client"
+    yum install mysql -y  &>> /tmp/roboshop.log
+    STATUS_CHECK
+    
+    PRINT_HEAD "load schema"
+    mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/schema/{component}.sql   &>> /tmp/roboshop.log
+    STATUS_CHECK
+    
+    PRINT_HEAD "restart shipping"
+    systemctl restart {component}
+    STATUS_CHECK
+
+  - name: Load MySQL Schema
+    when: ( {{schema_type}} != "mongo" ) and ( {{load_schema}} == "true" )
+    block:
+      - name: install mysql-client
+        ansible.builtin.yum:
+          name: mysql
+
+      - name: Load Schema
+        ansible.builtin.shell: mysql -h "{{ lookup('aws_ssm', 'dev.catalogue.mongo_endpoint', region='us-east-1' ) }}" -u"{{ lookup('aws_ssm', 'dev.shipping.db_user', region='us-east-1' ) }}" -p"{{ lookup('aws_ssm', 'dev.shipping.db_pass', region='us-east-1' ) }}" < /app/schema/{component}.sql
+
+      - name: restart shipping
+        ansible.builtin.systemd:
+          name: {{component}}
+          state: restarted
+          enabled: true

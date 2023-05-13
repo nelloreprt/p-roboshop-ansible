@@ -1,0 +1,77 @@
+# component=frontend >> in vars.yml >> component: frontend
+# source common.sh >> source is not required in ansible, only CONSIDER shell_functions
+
+# 1.--------------------------------------------------------------------------------------------
+PRINT_HEAD "install nginx"
+yum install nginx -y  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: Install Nginx
+  ansible.builtin.yum:
+    name: nginx
+    state: installed
+
+
+# 2.-----------------------------------------------------------------------------------------------
+PRINT_HEAD "removing the default content"
+rm -rf /usr/share/nginx/html/*  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: Recursively remove directory (removing the default content)
+  ansible.builtin.file:
+    path: /usr/share/nginx/html
+    state: absent
+
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+      path: /usr/share/nginx/html
+      state: directory
+
+
+# 3.--------------------------------------------------------------------------------------------------------------------
+PRINT_HEAD "change directory to >> /usr/share/nginx/html "
+cd /usr/share/nginx/html  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: Unarchive a file that needs to be downloaded (added in 2.0)
+  ansible.builtin.unarchive:
+    src: https://roboshop-artifacts.s3.amazonaws.com/{component}.zip
+    dest: /usr/share/nginx/html
+    remote_src: yes
+
+PRINT_HEAD "download the frontend content"
+curl -o /tmp/{component}.zip https://roboshop-artifacts.s3.amazonaws.com/{component}.zip  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+PRINT_HEAD "extract the frontend content"
+unzip /tmp/{component}.zip  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+# 4.----------------------------------------------------------------------------------------------------
+- name: Template a file to /etc/file.conf
+  ansible.builtin.template:
+    src: roboshop.conf
+    dest: /etc/nginx/default.d/roboshop.conf
+
+PRINT_HEAD "copy roboshop.conf"
+cp ${path}/files/roboshop.conf /etc/nginx/default.d/roboshop.conf  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+# 5.---------------------------------------------------------------------------------------
+- name: start nginx (including enable & restart)
+  ansible.builtin.systemd:
+    name: nginx
+    state: restarted
+    enabled: true
+
+PRINT_HEAD "enable nginx"
+systemctl enable nginx  &>> /tmp/roboshop.log
+STATUS_CHECK
+  
+PRINT_HEAD "start nginx"
+systemctl start nginx  &>> /tmp/roboshop.log
+STATUS_CHECK    
+
+PRINT_HEAD "restart nginx"
+systemctl restart nginx   &>> /tmp/roboshop.log
+STATUS_CHECK

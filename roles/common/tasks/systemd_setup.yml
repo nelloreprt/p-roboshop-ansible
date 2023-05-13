@@ -1,0 +1,36 @@
+# systemd_setup_function
+
+# 1.--------------------------------------------------------------------------------------------------
+PRINT_HEAD "copy catalogue.service"
+cp ${path}/files/{component}.service /etc/systemd/system/{component}.service  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: copy catalogue.service
+  ansible.builtin.template:
+    src: {component}.service
+    dest: /etc/systemd/system/{component}.service
+
+# 2.--------------------------------------------------------------------------------------------------
+  PRINT_HEAD "daemon reload"
+  systemctl daemon-reload  &>> /tmp/roboshop.log
+  STATUS_CHECK
+
+- name: daemon reload
+  ansible.builtin.systemd:
+    state: restarted
+    daemon_reload: true
+
+# 3.--------------------------------------------------------------------------------------------------
+  PRINT_HEAD "enable service"
+  systemctl enable {component}  &>> /tmp/roboshop.log
+  STATUS_CHECK
+
+- name: enable service
+  ansible.builtin.systemd:
+    name: "{{component}}"
+    state: restarted
+    enabled: true
+
+  PRINT_HEAD "start service"
+  systemctl start {component}  &>> /tmp/roboshop.log
+  STATUS_CHECK

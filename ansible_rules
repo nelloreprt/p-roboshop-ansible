@@ -1,0 +1,659 @@
+# 1. Shell vs Ansible -------------------------------------------------------------------------------------
+Shell is IMPERATIVE (each and every step to achieve the target has to be written)
+Ansible is DECLARATIVE
+
+Shell scripting is homogeneous >> if script is developed in CentOS-7, the same script might not work on CentOS-8
+Ansible is Heterogeneous
+
+In shell scripting Git clone to get script to the server to perform task
+Ansible: Code need not be on the server
+
+To do things on a large-SCALE shell will not work. If the requirement is on small-scale, shell is best option
+Ansible supports Parallel Operations
+
+We are trying to solve to automate the steps on the OperatingSystem of the server
+For which we will use ANSIBLE which is a configuration management tool
+
+configuration management tool >> comes with IDEMPOTENCY
+IDEMPOTENCY >> if user is not there it will create, if user is there it will ignore
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+2. Installing Ansible-----------------------------------------------------------------------------------------
+Create a separate ec2_machine to install ansible in it
+Python >=3.8 and above 3.9,
+ansible_CORE latest version >> 2.10 to 2.14 and above (it is collections with modules)
+
+Command to install ansible_core
+Step-1 install Requires: Python >=3.9
+  $ yum list all | grep python3
+$ yum install python39
+
+Step-2 install ansible
+$ pip3 install ansible
+  $ ansible –version >> to check ansible version
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+3. Ansible_ADHOC------------------------------------------------------------------------------------------------
+The machine in which ansible is installed is called Ansible server
+Above pic is about ansible-push
+Command >> ansible ADHOC commands are one task at a time, which is imperative way,
+but to support declarative >> PLAYBOOK which will have series of task will be used
+
+example of ansible_Adhoc_command:
+$ansible -i sample-inv all -e ansible_user=centos -e ansible_password=DevOps321 -b -m ansible.builtin.shell -a id
+
+3.1 Where to connect
+-i sample-inv >> -i is option to give inventory details
+create a file sample-inv >> enter Private_Ip of target machine/node1
+
+All >> to connect to all the machines in the inventory list
+Note >> “ all “ is mandatory
+
+“ , “ >> -i 172.168.255.1, >> indicates that it is not a inventory file, but it is a ip address
+
+3.2 How to connect
+-e ansible_user=centos >> -e environment variables with user name and password to connect to the machine
+
+3.3 What to do after connecting
+-m ansible.builtin.shell >> -m collection+MODULE name is “shell”
+Ansible.builtin is Collection name
+Shell is MODULE NAME
+
+-a id >> -a attribute to specify command “id/ls/cat” >>
+
+-b >> to install packages on any machine, admin permission is required,
+so we will add -b = become sudo/root
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+4. Key: Value --------------------------------------------------------------------------------------------------
+
+First >>
+Key: value
+
+example:>>
+Name: vikram
+Email: “vikram@gmail.com”
+----------------------------------------------------------------------------------------
+Second >>
+Key:
+  - Value1
+  - Value2
+
+If a key has more than one value then it is called as LIST
+Note:if it is a list and if there is a VALUE inside the list, only then we will have “-”
+Example of straight forward vlaues:>>
+contact:
+   - +9198765
+   - +9191234
+
+Alternative way to write LIST >>
+Contact: [“+9198765”, “+9191234”]
+----------------------------------------------------------------------------------------
+Third >>
+Key:
+   key1: value1
+   key2: value2
+
+If a key has more than one “key:value” then it is called as MAP
+example:>>
+Training:
+    Name: devops
+    Start: 01-mar-2023
+
+Alternative way to write MAP >>
+Training: {name:devops, start: 01-mar-2023}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ansible.builtin.debug:
+       msg: “Hello World”
+
+Notes:
+Debug is a module
+msg >> is a parameter
+
+---------------------------------------------------------------------------------
+
+- name: Unarchive a file that needs to be downloaded Frontend Content
+  ansible.builtin.unarchive:
+    src: https://roboshop-artifacts.s3.amazonaws.com/{{ component }}.zip
+    dest: /app
+    remote_src: yes
+
+Notes
+remote_src: yes >> the machine to which we are connecting to push the configuration to do the task is a remote machine
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Ansible-PLAYBOOK_command
+$ git pull
+$ ansible-playbook -i inv -e ansible_user=centos -e ansile_pass=DevOps321 01-sample.yml
+# OBSERVE                 -i frontend.nellore.online,
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Ansible_Playbook_SYNTAX
+
+Syntax:
+--- # this will be a comment
+- hosts: <host> Machine | Group | ALL
+  become: <yes|no> # no is default
+                   # "become" is SUDO USER Permissions
+
+  connection: <ssh|winrm|local>  # ssh is default
+  Notes: inside playbook if >> connection: <ssh|winrm|local> is given, then while running the playbook command,
+  -i localhost need not be given, i.e inventory details need not be specified, the playbook will run on local machine
+
+  become_user: <username>        # user in the inventory is default (this is a runtime command)
+  gather_facts: <yes|no>         # no is default
+
+
+  vars:                          (In TF: u can recall the same value, u dont have to hard code, u can pass values dynamically)
+   - <variablename>: value        This in called Local variable: a variable which is defined inside a playbook
+   - <variablename>: value       # to retrive " '{{variablename}}' " so value stored in variable will be returned back or displayed
+
+
+   tasks:                                    in Tf it is "var.variable_name"
+   - name: <name for your task1>             Note: First VARIABLE section will come then TASK section will come
+     <module>: <artibutary options>
+   - name: <name for your task2>
+     <module>: <arbituary options>
+     notify: <name for your task to handle>        # notify is used when we want to use handlers to a desired task
+
+
+  handlers:        (use Handler: if u have a task and it should be invoked only when parent task is getting changed)
+   - name: <name for your task to handle>       i.e only when state gets changed
+     <module>: <artibutary options>         eg: if u want to restart a machine it should happen only when, a particular module/package is update or
+        (two explanations)                     i dont want ansible to restart the machine
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Ansible_VARIIABLES >>
+
+- name: Demo on Play Level Variables
+  hosts: all
+  vars:
+    URL: play.example.com
+  tasks:
+    - name: Print URL
+      ansible.builtin.debug:
+        msg: URL - {{ URL }}
+
+# In Ansible variable will be accessed using {{ }} ,
+# Ansible Supports double quotes and single quotes also , However quotes are not not mandatory in all cases
+# quotes are mandatory if value starts with a variable , meaning
+# msg: "{{ URL }}" <- This requires quoting
+# msg: URL - {{ URL }} <- This does not require quoting
+
+- name: Load vars from a file
+  hosts: all
+  vars_files:
+    - exvars.yml
+  tasks:
+    - name: Print URL
+      ansible.builtin.debug:
+        msg: URL - {{ URL }}
+
+# vars_files does not support task level, it is for play level only
+
+- name: Demo on Task Level Variables /  task_specific Variables
+  hosts: all
+  tasks:
+    - name: Print URL
+      ansible.builtin.debug:
+        msg: URL - {{ URL }}
+      vars:
+        URL: tasks.example.com
+
+Variables inside Inventory file
+Create a file >> inv
+inside inv_file, add >> localhost URL=host.example.com
+
+# Only that task have that variable, other tasks cannot access it.
+
+- name: Variable from Roles
+  hosts: all
+  vars:
+    URL_PLAY: play.example.com
+  roles:
+    - sample
+
+
+Command Line variables type-5
+$ ansible-playbook -i inv 02-vars.yml -e URL=cli.example.com
+
+Variable_Precedence (without_Roles)
+1. CLI
+2. Task_Specific
+3. Variable from Files
+4. Play_level
+5. Inventory_Level
+
+Ansible_PRE-DEFINED_variables (FACTS)
+- name: Access a fact
+  hosts: all
+  connection: local
+  tasks:
+    - name: Access fact
+      ansible.builtin.debug:
+        msg: Anisble Host name == {{ansible_fqdn}}
+
+Facts are pre-defined variables,
+ansible will collect some facts
+Fqdn = full hostname of the server >> Fully Qualified Domain Name of the Server
+
+Ansible_RUN-TIME-Variable (register & set_facts)
+- name: Demo on register variables
+  hosts: all
+  tasks:
+    - name: Run uptime shell command
+      ansible.builtin.shell: uptime
+      register: output                   # Register is a variable >> to store output of a task
+    - name: Print output
+      ansible.builtin.debug:
+        msg: '{{ output.stdout }}'
+
+Debug is a module
+msg >> is a parameter
+
+Register is a variable >> to store output of a task
+
+The blue highlighted content in the above pic is the output that is captured using variable >> “register” and stored into “output”
+
+To print a particular variable
+“{{out.stdout}}”  << this is a json format
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Declaring variables in ROLES
+In shell >> if you group a set of commands, it is called a FUNCTION
+In ansible >> if you group a set of tasks, it is called a ROLE
+
+- name: RoboShop Project Setup
+  hosts: all
+  become: true
+  roles:
+    - "{{ role_name }}"              # cli_variable
+
+Variable_Precedence (WITH_Roles)
+1. CLI
+2. Task_Specific
+3. var_dir from roles
+4. Variable from Files
+5. Play_level
+6. Inventory_Level
+7. default_dir from roles
+Ansible will check for variables in all folders and if no variable is declared, finally then it will look for variable in default_folder,
+Suppose if no variables found in default_folder also then the playbook will fail
+
+ansible_variable_DAT_TYPES
+URL: www.google.com
+BOOL: true / false / yes / no
+NUMBER: 8 / "8" / 9.5
+STRING: "true"
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Ansible - PULL mechanism
+Ensure to install ANSIBLE on the target machine
+$ ansible-pull –help >> pull playbooks from a VCS repo (GITHUB) and executes them for the local host
+$ ansible-pull -i localhost, -U https://www.github.com roboshop.yml -e ROLE_NAME=catalogue
+
+If "connection" is ssh >> user name , password has to be given while connecting to  any machine
+If "connection" is local, user name and password is not required to connect to a machine
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+$ ansible-playbook 1.yml --check
+ #(dry run will be performed SYNTAX WILL BE CHECKED) similar to $ terraform validate
+                                    # just trying to identify what is going to happen
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ansible_LOOPS
+
+- name: Demo on loops
+  hosts: all
+  tasks:
+    # loops type-1 LIST type
+    - name: Print Fruit Name
+      debug:
+        msg: Fruit name is {{ item }}
+      loop:
+        - apple
+        - banana
+
+    # Loops Type-2 MAP type
+    - name: Print Fruit Name & Quantity
+      debug:
+        msg: Fruit name is {{ item.name }}, & Quantity is {{ item.quantity }}
+      loop:
+        - { name: "apple", quantity: 100 }
+        - { name: "banan", quantity: 200 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ansible_CONDITIONS
+
+- name: Demo on condition
+  hosts: all
+  vars:
+    a: 100
+    b: false
+  tasks:
+    - name: String Conditions
+      debug:
+        msg: Fruit name is apple
+      when: fruit_name == "apple"
+
+    - name: Numerical Conditions
+      debug:
+        msg: a is greater than 10
+      when: a > 10
+
+    - name: Boolean Conditions
+      debug:
+        msg: b is true
+      when: b
+
+Inside conditions when you are using variable, flower {{}} bracket is not required
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Note >> when u rerun mysql_component playbook,
+it will throw an error with return code > rc: 1 >> when password is already reset/changed  >> this is a expected behaviour,
+we have to proceed to continue with the playbook by handling the error
+
+As default behaviour of ansible is, if any error is thrown, it will stop there and then itself
+
+If password is not changed, with return code > rc: 0
+
+So the solution - 1 is ANSIBLE AUTOMATION
+Direct ignoring error >> “using ignore_errors”
+- name: change the default root password
+  Ansible.builtin.shell: mysql_secure_installation --set-root-pass {{  root_mysql_password}
+  ignore_errors: yes
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+As the app-prereq is common for many roles like
+Catalogue,user,
+Now the same app-prereq is required in SHIPPING
+So create common/tasks/app-prereq.yml >> source
+
+Using ansible module >> include_tasks
+We will reuse app-prereq.yml in the same common role >> by using ansible module >> include_tasks
+Example is shown below
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# two commands in a shell module can we run using semi collan "; "
+ mvn clean package ; mv target/{{component}}-1.0.jar {{component}}.jar
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Jinja templates include copy feature,
+but while copying if you want to replace a value inside the file with a variable from command line >> then use JINJA TEMPLATES
+
+Earlier every component was having a
+Folder with name “files”
+Now rename files to >> “ templates ”
+
+# we have used JINJA Templates in systemd.yml
+# template is going to replace that particular value while it is copying it, from variable value given in cli
+# {{root_rabbitmq_password}} >> root_rabbitmq_password=Roboshop@1
+
+Template module will look for templates
+Copy module will look for files
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ANSIBLE BEST PRACTICES
+Inventories >> WE ARE Passing through the command line directly, we are not maintaining any separate inventory file
+Maintain Different inventory file for different environments (production.inventory / staging.inventory)
+
+Modules >> from ansible 2.10 >> called as COLLECTIONS
+
+Variables >>
+Vars_files >> only while defining a play, but not on task level
+“ Include_vars “ is similar to  Include_tasks which works on task level
+
+Facts >>
+Facts are pre-defined variables,
+ansible will collect some facts
+Fqdn = full hostname of the server >> Fully Qualified Domain Name of the Server
+
+--------------------------------------------------
+If you have too many command line options
+and you want to keep those command line options away from the command line then use ansible.cfg
+
+Configuration files >> under /etc/ansible
+You will have “ansible.cfg” file
+All the default values will be taken from ansible.cfg file, only after ansible.cfg file is successfully configured
+
+My personal choice is command line, not ansible.cfg because,
+command line options can be easily understood,
+to know what are the options that are being passed,
+and easy for understanding as well
+--------------------------------------------------------
+
+Forks >> will decide on how many servers the play book should run at a time
+More on forks will be learnt on deployment practices
+
+Explanation:
+Ansible uses batches for task execution, which are controlled by a parameter called forks .
+The default value for forks is 5, which means Ansible executes a task on the first five hosts,
+waits for the task to complete, and then takes the next batch of five hosts, and so on
+
+-----------------------------------------------------------
+
+Install and configure an Ansible control node
+Install required packages >> Python 3.9
+Create a static host inventory file
+Create a configuration file >> ansible.cfg  >> under (etc/ansible)
+Above points are on Installing ansible on ansible controller
+-----------------------------------------------------------------
+
+Configure Ansible managed nodes
+Create and distribute SSH keys to managed nodes >> we are using USERNAME_PASSWORD
+Configure privilege escalation on managed nodes >> become: yes
+Validate a working configuration using >> ad-hoc Ansible commands
+
+---------------------------------------------------------------
+
+simple shell scripts that run ad hoc Ansible commands >> Playbook is the ideal way of running the things
+
+-------------------------------------------------------------
+
+Use both static and dynamic inventories to define groups of hosts
+Static inventory >> we will hard code the server things
+Dynamic Inventory >> running aws_cli to fetch list of servers
+I.e fetching the inventory from aws
+Redirecting the fetched inventory to a inventory file
+Now Using the same inventory file and passing it to ansible
+$ aws ec2 describe-instances | jq privateIPAddress >/tmp/inv
+
+--------------------------------------------------------------------
+
+Create Ansible plays and playbooks
+Know how to work with commonly used Ansible modules
+Use variables to retrieve the results of running commands >> register module
+Use conditionals to control play execution >> when condition
+Configure error >> ignore_errors
+
+---------------------------------------------------------------------
+
+Ansible galaxy is least used in real time projects, and is used  for testing purpose,
+all the ansible collections-modules comes from ansible galaxy
+Not used in projects because , project requirements will always differ from general requirements
+
+------------------------------------------------------------------------
+
+RESCUED >> if the playbook is a failure and if you want to perform something else so that the failure can be made success
+Rescue >> comes only in the case of failure
+Create playbooks to configure systems to a specified state
+
+explanation: Rescue blocks specify tasks to run when an earlier task in a block fails.
+This approach is similar to exception handling in many programming
+
+---------------------------------------------------------------------------------
+
+Manage parallelism >> Forks, then tune -f value
+
+Use Ansible Vault in playbooks to protect sensitive data
+In our project user and password we are passing from command line
+But later we will not pass user+password through command line,
+Where this playbook has to go to (aws_parameter_store) and fetch for the user name and password
+
+But to store content in encrypted format in ansible, for which ansible-vault will be used
+
+----------------------------------------------------------------------------------
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Secret Management means >> STORING + RETRIEIVING
+Tool for password management is >> VAULT from hashicorp is modern SECRETS management tool
+
+In AWS echo system >> IN REAL PROJECTS
+AWS Secrets manager >>
+chargable >> 0.50 USD/Secret
+Supports >> AUTO ROTATION of PASSWORDS
+
+Note: in our project >> we will go free of cost using AWS Parameter store >> which will not be under services,
+but will be under features, as it is sub part of a service
+Does not Supports >> AUTO ROTATION of PASSWORDS is not supported by AWS PARAMETER STORE
+Paramameter Management means >> STORING + RETRIEIVING
+
+roboshop_app should be designed to go and fetch from parameter store / secret store
+We will STORE create/store the parameter in parameter store using >> Terraform
+We will READ the parameter from parameter store using >> Ansible (lookup)
+Lookup is part of ansible filters
+Which will look at a particular place and fetch the value >> aws ssm module (simple system manager)
+example: "{{ lookup('aws_ssm', 'dev.cart.REDIS_HOST', region='us-east-1' ) }}"
+Actual Syntax >> "{{ lookup('aws_ssm', '{{env}}.{{component}}.REDIS_HOST', region='us-east-1' ) }}"
+
+
+Now Ansible should go to the parameter store in aws and fetch the value of parameter
+
+Note: in order to read the parameter in aws, administrative permissions are required,
+that should be ensured using IAM by creating a user with admin privileges
+If ec2 is a new machine and if it is trying to get the values from parameter store,
+then my ec2 requires certain permissions to read the parameters
+from parameters store >> we can give permissions what is specifically needed
+for that particular instance >> so to that we need to structure the parameters
+while creating the parameters >> environment.component.parameter_name
+
+Eg: dev.cart.REDIS_HOST
+Note: only dot “ . ” is allowed while creating parameter_name in aws
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+role_dependencies-------------------------------------------------------------------------
+Set-hostname command is common for all the components
+Meta is a role dependencies >>
+role dependencies >> It will automatically pull in other roles using a role
+
+Create >> roles/frontend/meta/main.yml
+---
+dependencies:
+ - role: common
+
+roles
+    frontend
+        tasks/main.yml
+        vars/main.yml
+        meta/main.yml
+            ---
+            dependencies:
+            - role: common
+
+    common
+          tasks/load_schema.yml
+          tasks/app_prereq.yml
+          tasks/nodejs.yml
+          tasks/systemd_setup.yml
+          vars/main.yml
+
+step-1    tasks/main.yml   >> Note: this is the first time we are using main.yml file in common_role,
+                            Usually all the files under common_role are customized names like nodejs.yml, app-pre.yml etc..
+                            If we dont use main.yml file in common_role, ROLE DEPENDENCIES will not work
+
+            - name: set-hostname
+              ansible.builtin.shell: set-hostname {{component}}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+While working with ansible-pull-------------------------------------------------------------------------------------------
+
+step-1
+Cli command shall have
+$ ansible-pull -i localhost,
+
+step-2
+Inside playbook/role
+  hosts: all
+-------------------------------
+
+About  “ -i “ inventory details >>
+-i >> means dynamic inventory
+Dynamic inventory means >> if the inventory details are not mentioned in the default location of  >> /etc/ansible/hosts,
+Then ansible will treat all the inventories as dynamic inventory, where in >> “ -i “ details shall be mentioned
+
+Inside playbook/role
+  hosts: all
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

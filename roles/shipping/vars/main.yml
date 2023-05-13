@@ -1,0 +1,7 @@
+component: shipping
+
+component_type: shipping
+
+load_schema: true
+
+schema_type: mysql

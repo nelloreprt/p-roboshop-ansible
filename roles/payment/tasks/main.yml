@@ -1,0 +1,46 @@
+# component=payment >> in vars.yml >> component: payment
+
+# source common.sh >> source is not required in ansible, only CONSIDER shell_functions
+
+# 1.-------------------------------------------------------------------------------------------------
+PRINT_HEAD "install python"
+yum install python36 gcc python3-devel -y  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: install python
+  ansible.builtin.yum:
+    name:
+      - python36
+      - gcc
+      - python3-devel
+    state: installed
+
+# 2.------------------------------------------------------------------------------------------------
+APP_PREREQ
+
+# APP_PREREQ is a shell_function
+- name: Importing Common role (app_prereq)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: app_prereq  #(".yml" extension shall be ignored while importing role)
+
+# 3.----------------------------------------------------------------------------------------------
+PRINT_HEAD "Download Dependencies"
+cd /app  &>> /tmp/roboshop.log
+pip3.6 install -r requirements.txt &>> /tmp/roboshop.log
+STATUS_CHECK
+
+# installing package in target directory
+- name: Download Dependencies in /app_directory
+  ansible.builtin.shell: pip3.6 install -r requirements.txt
+    args:
+      chdir: /app
+
+# 4.-------------------------------------------------------------------------------------------------
+systemd_setup
+
+# systemd_setup is a shell_function
+- name: Importing Common role (systemd_setup)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: systemd_setup  #(".yml" extension shall be ignored while importing role)

@@ -1,0 +1,100 @@
+# Ansible by default will not start if the value of >> "roboshop_rabbitmq_password" is not declared.
+# we will declare the value of "roboshop_rabbitmq_password" in "cli"
+$ ansible-playbook -i rabbitmq-dev.nellore.online, roboshop.yml
+ -e ROLE_NAME=rabbitmq -e ansible_user=centos -e ansible_password=DevOps321
+ -e HOSTS=all
+ -e root_rabbitmq_password=RoboShop@1
+
+# In shell below steps are followed-----------------------------------
+# to check if the variable "roboshop_rabbitmq_password" is empty or not
+# if variable is empty then -z = true >> enter roboshop_rabbitmq_password
+if [ -z "roboshop_rabbitmq_password"]
+then
+echo -e "\e[31m enter roboshop_rabbitmq_password \e[0m"
+fi
+#----------------------------------------------------------------------------------------------------  
+# component_type=nodejs >> in vars.yml >> component_type: nodejs
+  
+# source common.sh >> source is not required in ansible, only CONSIDER shell_functions
+
+# 1.-----------------------------------------------------------------------------------------------------
+PRINT_HEAD "configuring yum repos"
+curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | bash  &>> /tmp/roboshop.log
+STATUS_CHECK
+  
+PRINT_HEAD "configure yum repos"
+curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | bash  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: Configure YUM Repos from the script provided by vendor.
+  Ansible.builtin.shell: {{item}}
+  loop:
+    - curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | sudo bash
+    - curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash
+# to keep the code DRY, we are using loops as same task is repeted with different path
+
+
+# 2.-------------------------------------------------------------------------------------------------------
+PRINT_HEAD "install erlang"
+yum install erlang -y  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: install erlang
+  ansible.builtin.yum:
+    name: erlang
+    state: installed
+
+# 3.--------------------------------------------------------------------------------------------------------
+PRINT_HEAD "install rabbitmq"
+yum install rabbitmq-server -y  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: install rabbitmq
+  ansible.builtin.yum:
+    name: rabbitmq-server
+    state: installed
+
+# 4.--------------------------------------------------------------------------------------------------------
+PRINT_HEAD "enable rabbitmq"
+systemctl enable rabbitmq-server
+STATUS_CHECK
+
+- name: enable & restart rabbitmq
+  ansible.builtin.systemd:
+    name: rabbitmq-server
+    state: restarted
+    enabled: true
+# instead of started, better to use restarted, because instead any change comes into picture, it is better to restart
+PRINT_HEAD "start rabbitmq"
+systemctl start rabbitmq-server
+STATUS_CHECK
+
+# 5.---------------------------------------------------------------------------------------------------------
+PRINT_HEAD "creating user"
+rabbitmqctl list_users | grep roboshop
+if [$? -ne 0]
+then
+rabbitmqctl add_user roboshop ${roboshop_rabbitmq_password}
+fi
+STATUS_CHECK
+
+- name: creating user
+  community.rabbitmq.rabbitmq_user:
+    user: roboshop
+    password: "{{roboshop_rabbitmq_password}}"
+    vhost: /
+    configure_priv: .*
+    read_priv: .*
+    write_priv: .*
+    state: present
+    tags: administrator
+
+PRINT_HEAD "creating user"
+rabbitmqctl set_permissions -p / roboshop ".*" ".*" ".*"
+STATUS_CHECK
+
+# 6.---------ansible_push_command with variables----------------------------------------------------------------------------------------------------------
+  $ ansible-playbook -i rabbitmq-dev.nellore.online, roboshop.yml
+  -e ROLE_NAME=rabbitmq -e ansible_user=centos -e ansible_password=DevOps321
+  -e HOSTS=all
+  -e root_rabbitmq_password=RoboShop@1

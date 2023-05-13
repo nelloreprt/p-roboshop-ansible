@@ -1,0 +1,62 @@
+# Ansible by default will not start if the value of >> "roboshop_mysql_password" is not declared.
+# we will declare the value of "roboshop_mysql_password" in "cli"
+$ ansible-playbook -i cart-dev.nellore.online, roboshop.yml
+-e ROLE_NAME=rabbitmq -e ansible_user=centos -e ansible_password=DevOps321
+-e HOSTS=all
+-e root_mysql_password=RoboShop@1
+  
+# In shell below steps are followed-----------------------------------
+# to check if the variable "roboshop_mysql_password" is empty or not
+# if variable is empty then -z = true >> enter roboshop_mysql_password
+if [ -z ${root_mysql_password} ]
+then
+echo “enter root_mysql_password”
+exit
+fi
+
+component=shipping
+  # component=shipping >> in vars.yml >> component: shipping
+
+load_schema=true
+  # load_schema=true >> in vars.yml >> load_schema: true
+
+schema_type=mysql
+  # schema_type=mysql >> in vars.yml >> schema_type: mysql
+
+component_type=shipping
+  # component_type=shipping >> in vars.yml >> component_type: shipping
+  
+  # source common.sh >> source is not required in ansible, only CONSIDER shell_functions
+source common.sh
+
+# 1.-------------------------------------------------------------------------------
+PRINT_HEAD "install maven"
+yum install maven -y  &>> /tmp/roboshop.log
+STATUS_CHECK
+
+- name: Install maven
+  ansible.builtin.yum:
+    name: maven
+    state: installed
+
+  
+# 2.-------------------------------------------------------------------------------
+APP_PREREQ
+- name: Importing Common role (app_prereq)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: app_prereq  #(".yml" extension shall be ignored while importing role)
+  
+# 3.-------------------------------------------------------------------------------
+systemd_setup
+- name: Importing Common role (systemd_setup)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: systemd_setup  #(".yml" extension shall be ignored while importing role)
+
+# 4.-------------------------------------------------------------------------------
+load_schema
+- name: Importing Common role (load_schema)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: load_schema  #(".yml" extension shall be ignored while importing role)

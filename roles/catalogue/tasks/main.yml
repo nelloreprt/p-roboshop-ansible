@@ -1,0 +1,52 @@
+# component=catalogue >> in vars.yml >> component: catalogue
+
+# load_schema=true >> in vars.yml >> load_schema: true
+
+# schema_type=mongo >> in vars.yml >> schema_type: mongo
+
+# component_type=nodejs >> in vars.yml >> component_type: nodejs
+
+# source common.sh >> source is not required in ansible, only CONSIDER shell_functions
+
+
+NODEJS is a shell_function
+- name: Importing Common role (nodejs)
+  ansible.builtin.import_role:
+      name: common
+      tasks_from: nodejs  #(".yml" extension shall be ignored while importing role)
+
+
+APP_PREREQ is a shell_function
+- name: Importing Common role (app_prereq)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: app_prereq  #(".yml" extension shall be ignored while importing role)
+
+
+load_schema is a shell_function
+- name: Importing Common role (load_schema)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: load_schema  #(".yml" extension shall be ignored while importing role)
+
+
+systemd_setup is a shell_function
+- name: Importing Common role (systemd_setup)
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: systemd_setup  #(".yml" extension shall be ignored while importing role)
+
+# this step is already done in mongodb, so not required in catalogue.sh
+# PRINT_HEAD "Setup the MongoDB repo file"
+# cp ${path}/files/mongo.repo /etc/yum.repos.d/mongo.repo  &>> /tmp/roboshop.log
+# STATUS_CHECK
+
+
+
+
+
+
+
+
+
+
