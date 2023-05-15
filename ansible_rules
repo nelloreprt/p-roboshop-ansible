@@ -50,6 +50,7 @@ All >> to connect to all the machines in the inventory list
 Note >> “ all “ is mandatory
 
 “ , “ >> -i 172.168.255.1, >> indicates that it is not a inventory file, but it is a ip address
+"," is used when the invetory is not a file.
 
 3.2 How to connect
 -e ansible_user=centos >> -e environment variables with user name and password to connect to the machine
@@ -102,10 +103,11 @@ Training:
     Start: 01-mar-2023
 
 Alternative way to write MAP >>
-Training: {name:devops, start: 01-mar-2023}
+Training: { name:devops, start: 01-mar-2023 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+# 5.----------------------------------------------------------------------------------------------
 ansible.builtin.debug:
        msg: “Hello World”
 
@@ -127,13 +129,13 @@ remote_src: yes >> the machine to which we are connecting to push the configurat
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Ansible-PLAYBOOK_command
+# 6. Ansible-PLAYBOOK_command------------------------------------------------------------
 $ git pull
 $ ansible-playbook -i inv -e ansible_user=centos -e ansile_pass=DevOps321 01-sample.yml
 # OBSERVE                 -i frontend.nellore.online,
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Ansible_Playbook_SYNTAX
+# 7. Ansible_Playbook_SYNTAX------------------------------------------------------------
 
 Syntax:
 --- # this will be a comment
@@ -169,7 +171,7 @@ Syntax:
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Ansible_VARIIABLES >>
+# 8. Ansible_VARIIABLES >>   user_defined, pre_defined, run_time_variables(register & set_facts)
 
 - name: Demo on Play Level Variables
   hosts: all
@@ -182,7 +184,7 @@ Ansible_VARIIABLES >>
 
 # In Ansible variable will be accessed using {{ }} ,
 # Ansible Supports double quotes and single quotes also , However quotes are not not mandatory in all cases
-# quotes are mandatory if value starts with a variable , meaning
+# quotes are mandatory if VALUE starts with a variable , meaning
 # msg: "{{ URL }}" <- This requires quoting
 # msg: URL - {{ URL }} <- This does not require quoting
 
@@ -210,7 +212,7 @@ Variables inside Inventory file
 Create a file >> inv
 inside inv_file, add >> localhost URL=host.example.com
 
-# Only that task have that variable, other tasks cannot access it.
+# Only that task have that variable_name, other tasks cannot access it.
 
 - name: Variable from Roles
   hosts: all
@@ -239,7 +241,7 @@ Ansible_PRE-DEFINED_variables (FACTS)
       ansible.builtin.debug:
         msg: Anisble Host name == {{ansible_fqdn}}
 
-Facts are pre-defined variables,
+Facts are PRE-Defined variables,
 ansible will collect some facts
 Fqdn = full hostname of the server >> Fully Qualified Domain Name of the Server
 
@@ -259,14 +261,15 @@ msg >> is a parameter
 
 Register is a variable >> to store output of a task
 
-The blue highlighted content in the above pic is the output that is captured using variable >> “register” and stored into “output”
+The blue highlighted content in the above pic is the output that is captured using variable >> “register” and
+stored into “output”
 
 To print a particular variable
 “{{out.stdout}}”  << this is a json format
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Declaring variables in ROLES
+# 9. Declaring variables in ROLES--------------------------------------------------------------------------------
 In shell >> if you group a set of commands, it is called a FUNCTION
 In ansible >> if you group a set of tasks, it is called a ROLE
 
@@ -287,7 +290,7 @@ Variable_Precedence (WITH_Roles)
 Ansible will check for variables in all folders and if no variable is declared, finally then it will look for variable in default_folder,
 Suppose if no variables found in default_folder also then the playbook will fail
 
-ansible_variable_DAT_TYPES
+ansible_variable_DAT_TYPES----------------------------------------------------------------------
 URL: www.google.com
 BOOL: true / false / yes / no
 NUMBER: 8 / "8" / 9.5
@@ -295,7 +298,7 @@ STRING: "true"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Ansible - PULL mechanism
+# 10. Ansible - PULL mechanism------------------------------------------------------------------
 Ensure to install ANSIBLE on the target machine
 $ ansible-pull –help >> pull playbooks from a VCS repo (GITHUB) and executes them for the local host
 $ ansible-pull -i localhost, -U https://www.github.com roboshop.yml -e ROLE_NAME=catalogue
@@ -305,13 +308,14 @@ If "connection" is local, user name and password is not required to connect to a
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+# 11. ansible_DRY_RUN-----------------------------------------------------------------
 $ ansible-playbook 1.yml --check
  #(dry run will be performed SYNTAX WILL BE CHECKED) similar to $ terraform validate
                                     # just trying to identify what is going to happen
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ansible_LOOPS
+# 12. ansible_LOOPS------------------------------------------------------------------------
 
 - name: Demo on loops
   hosts: all
@@ -329,12 +333,12 @@ ansible_LOOPS
       debug:
         msg: Fruit name is {{ item.name }}, & Quantity is {{ item.quantity }}
       loop:
-        - { name: "apple", quantity: 100 }
-        - { name: "banan", quantity: 200 }
+        - { name: "apple", quantity: 100 }    # map_type
+        - { name: "banan", quantity: 200 }    # map_type
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ansible_CONDITIONS
+# 13. ansible_CONDITIONS-------------------------------------------------
 
 - name: Demo on condition
   hosts: all
@@ -345,23 +349,23 @@ ansible_CONDITIONS
     - name: String Conditions
       debug:
         msg: Fruit name is apple
-      when: fruit_name == "apple"
+      when: fruit_name == "apple"         # "fruit_name" is variable_name
 
     - name: Numerical Conditions
       debug:
         msg: a is greater than 10
-      when: a > 10
+      when: a > 10                        # "a" is a variable_name
 
     - name: Boolean Conditions
       debug:
         msg: b is true
-      when: b
+      when: b                             # "b" is a variable_name
 
-Inside conditions when you are using variable, flower {{}} bracket is not required
+observe: Inside conditions when you are using variable, flower {{}} bracket is not required
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Note >> when u rerun mysql_component playbook,
+# 14. Note >> when u rerun mysql_component playbook----------------------------------------------------------------
 it will throw an error with return code > rc: 1 >> when password is already reset/changed  >> this is a expected behaviour,
 we have to proceed to continue with the playbook by handling the error
 
@@ -377,24 +381,24 @@ Direct ignoring error >> “using ignore_errors”
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-As the app-prereq is common for many roles like
+# 15. As the app-prereq is common for many roles like-----------------------------------------------------
 Catalogue,user,
 Now the same app-prereq is required in SHIPPING
 So create common/tasks/app-prereq.yml >> source
 
 Using ansible module >> include_tasks
-We will reuse app-prereq.yml in the same common role >> by using ansible module >> include_tasks
-Example is shown below
+We will reuse app-prereq.yml (in the same common role) >> by using ansible module >> include_tasks
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# two commands in a shell module can we run using semi collan "; "
+# 16. two commands in a shell module can we run using semi collan "; "
  mvn clean package ; mv target/{{component}}-1.0.jar {{component}}.jar
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Jinja templates include copy feature,
-but while copying if you want to replace a value inside the file with a variable from command line >> then use JINJA TEMPLATES
+# 17. Jinja templates include copy feature,
+but while copying if you want to replace a value inside the file
+with a variable from command line >> then use JINJA TEMPLATES
 
 Earlier every component was having a
 Folder with name “files”
@@ -410,7 +414,7 @@ Copy module will look for files
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ANSIBLE BEST PRACTICES
+# 18. ANSIBLE BEST PRACTICES
 Inventories >> WE ARE Passing through the command line directly, we are not maintaining any separate inventory file
 Maintain Different inventory file for different environments (production.inventory / staging.inventory)
 
@@ -418,7 +422,7 @@ Modules >> from ansible 2.10 >> called as COLLECTIONS
 
 Variables >>
 Vars_files >> only while defining a play, but not on task level
-“ Include_vars “ is similar to  Include_tasks which works on task level
+“ Include_vars “ is similar to  Include_tasks which works on Task level
 
 Facts >>
 Facts are pre-defined variables,
@@ -439,12 +443,14 @@ to know what are the options that are being passed,
 and easy for understanding as well
 --------------------------------------------------------
 
-Forks >> will decide on how many servers the play book should run at a time
+Forks >> will decide on how many servers the play book should run at a time >> The "default value for forks is 5"
 More on forks will be learnt on deployment practices
+
+Manage parallelism >> Forks, then tune -f value
 
 Explanation:
 Ansible uses batches for task execution, which are controlled by a parameter called forks .
-The default value for forks is 5, which means Ansible executes a task on the first five hosts,
+The "default value for forks is 5" , which means Ansible executes a task on the first five hosts,
 waits for the task to complete, and then takes the next batch of five hosts, and so on
 
 -----------------------------------------------------------
@@ -468,7 +474,9 @@ simple shell scripts that run ad hoc Ansible commands >> Playbook is the ideal w
 -------------------------------------------------------------
 
 Use both static and dynamic inventories to define groups of hosts
+
 Static inventory >> we will hard code the server things
+
 Dynamic Inventory >> running aws_cli to fetch list of servers
 I.e fetching the inventory from aws
 Redirecting the fetched inventory to a inventory file
@@ -484,6 +492,7 @@ Use conditionals to control play execution >> when condition
 Configure error >> ignore_errors
 
 ---------------------------------------------------------------------
+Ansible galaxy - Ansible galaxy - Ansible galaxy - Ansible galaxy - Ansible galaxy
 
 Ansible galaxy is least used in real time projects, and is used  for testing purpose,
 all the ansible collections-modules comes from ansible galaxy
@@ -491,23 +500,40 @@ Not used in projects because , project requirements will always differ from gene
 
 ------------------------------------------------------------------------
 
+Step-2---------------
 RESCUED >> if the playbook is a failure and if you want to perform something else so that the failure can be made success
 Rescue >> comes only in the case of failure
 Create playbooks to configure systems to a specified state
 
-explanation: Rescue blocks specify tasks to run when an earlier task in a block fails.
+Step-1--------------------------
+explanation: Rescue blocks specify tasks to run, when an earlier task in a block fails.
 This approach is similar to exception handling in many programming
+
+Example:
+tasks:
+ - name: Handle the error
+   block:
+     - name: Print a message
+       ansible.builtin.debug:
+         msg: 'I execute normally'
+
+     - name: Never print this
+       ansible.builtin.debug:
+         msg: 'I never execute, due to the above task failing, :-('
+   rescue:
+     - name: Print when errors
+       ansible.builtin.debug:
+         msg: 'I caught an error, can do stuff here to fix it, :-)'
 
 ---------------------------------------------------------------------------------
 
-Manage parallelism >> Forks, then tune -f value
+Ansible Vault -------------------------------------------
+But to store content in encrypted format in ansible, for which ansible-vault will be used
 
 Use Ansible Vault in playbooks to protect sensitive data
 In our project user and password we are passing from command line
 But later we will not pass user+password through command line,
 Where this playbook has to go to (aws_parameter_store) and fetch for the user name and password
-
-But to store content in encrypted format in ansible, for which ansible-vault will be used
 
 ----------------------------------------------------------------------------------
 
@@ -562,12 +588,12 @@ dependencies:
 
 roles
     frontend
-        tasks/main.yml
-        vars/main.yml
-        meta/main.yml
-            ---
-            dependencies:
-            - role: common
+         tasks/main.yml
+         vars/main.yml
+step-2   meta/main.yml
+             ---
+             dependencies:
+             - role: common
 
     common
           tasks/load_schema.yml
@@ -603,57 +629,4 @@ Then ansible will treat all the inventories as dynamic inventory, where in >> �
 
 Inside playbook/role
   hosts: all
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
