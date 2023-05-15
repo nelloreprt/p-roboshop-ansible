@@ -539,7 +539,7 @@ Where this playbook has to go to (aws_parameter_store) and fetch for the user na
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Secret Management means >> STORING + RETRIEIVING
+# 19. Secret Management means >> STORING + RETRIEIVING ----------------------------------------------------------
 Tool for password management is >> VAULT from hashicorp is modern SECRETS management tool
 
 In AWS echo system >> IN REAL PROJECTS
@@ -576,7 +576,7 @@ Note: only dot “ . ” is allowed while creating parameter_name in aws
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-role_dependencies-------------------------------------------------------------------------
+# 20. role_dependencies-------------------------------------------------------------------------
 Set-hostname command is common for all the components
 Meta is a role dependencies >>
 role dependencies >> It will automatically pull in other roles using a role
@@ -611,7 +611,7 @@ step-1    tasks/main.yml   >> Note: this is the first time we are using main.yml
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-While working with ansible-pull-------------------------------------------------------------------------------------------
+# 21. While working with ansible-pull-------------------------------------------------------------------------------------------
 
 step-1
 Cli command shall have
