@@ -3,8 +3,16 @@ Description = Catalogue Service
 
 [Service]
 User=roboshop
-Environment="{{ lookup('aws_ssm', '{{env}}.catalogue.mongo', region='us-east-1' ) }}"
-Environment=MONGO_URL="{{ lookup('aws_ssm', '{{env}}.catalogue.mongo_endpoint', region='us-east-1' ) }}"
+
+# ---------------------------------------------------------------------------------------------------
+# So till now we used mongodb on server, but from now we will use aws_services for db >> document db,
+# so new parameters need to be updated by removing mongodb, adding docdb
+# Now docdb will provide end-point, we need to connect to that endpoint of docdb
+# Environment=MONGO="{{ lookup('aws_ssm', '{{env}}.catalogue.mongo', region='us-east-1' ) }}"
+# ---------------------------------------------------------------------------------------------------
+
+Environment=DOCUMENTDB="{{ lookup('aws_ssm', '{{env}}.catalogue.mongo', region='us-east-1' ) }}"
+Environment=MONGO_URL="{{ lookup('aws_ssm', '{{env}}.docdb.url.{{component}}', region='us-east-1' ) }}"
 ExecStart=/bin/node /app/server.js
 SyslogIdentifier=catalogue
 

@@ -4,9 +4,17 @@ Description = User Service
 [Service]
 User=roboshop
 
-Environment="{{ lookup('aws_ssm', 'dev.user.mongo', region='us-east-1' ) }}"
+Environment=DOCUMENTDB="{{ lookup('aws_ssm', 'dev.user.mongo', region='us-east-1' ) }}"
+
+# ---------------------------------------------------------------------------------------------------
+# So till now we used redis on server, but from now we will use aws_services for db >> elasticache,
+# so new parameters need to be updated by removing redis, adding elasticache
+# Now elasticache will provide end-point, we need to connect to that endpoint of elasticache
 Environment=REDIS_HOST="{{ lookup('aws_ssm', 'dev.user.redis_host', region='us-east-1' ) }}"
-Environment=MONGO_URL="{{ lookup('aws_ssm', 'dev.user.mongo_url', region='us-east-1' ) }}"
+# ---------------------------------------------------------------------------------------------------
+
+Environment=REDIS_HOST="{{ lookup('aws_ssm', '{{var.env}}.elasticache.endpoint', region='us-east-1' ) }}"
+Environment=MONGO_URL="{{ lookup('aws_ssm', '{{env}}.docdb.url.{{component}}', region='us-east-1' ) }} "
 
 ExecStart=/bin/node /app/server.js
 SyslogIdentifier=user
